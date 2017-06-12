@@ -34,6 +34,10 @@ class RLParams():
         self.__dict__
 
 
+class DataObject():
+    def __init__(self, data):
+        self.data = data
+
 class RLModel():
 
     def __init__(self,
@@ -67,7 +71,7 @@ class RLModel():
         self._build_model(random_state)
         self._train_model()
 
-    def __call__(self, parameter_values, random_state=None):
+    def __call__(self, *parameter_values, index_in_batch=None, random_state=None):
         """ Simulates data.
         Interfaces to ELFI as a sequential simulator.
 
@@ -83,7 +87,7 @@ class RLModel():
         """
         self.train_model(parameter_values, random_state=random_state)
         log_dict = self.simulate(random_state)
-        return log_dict
+        return DataObject(log_dict)
 
     def get_policy(self):
         """ Returns the current policy of the agent
