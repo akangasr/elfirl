@@ -34,10 +34,6 @@ class RLParams():
         self.__dict__
 
 
-class DataObject():
-    def __init__(self, data):
-        self.data = data
-
 class RLModel():
 
     def __init__(self,
@@ -87,7 +83,7 @@ class RLModel():
         """
         self.train_model(parameter_values, random_state=random_state)
         log_dict = self.simulate(random_state)
-        return DataObject(log_dict)
+        return log_dict
 
     def get_policy(self):
         """ Returns the current policy of the agent
