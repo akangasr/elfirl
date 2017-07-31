@@ -58,6 +58,7 @@ class ParametricLoggingEnvironment(Environment):
         self.v = variables
         self.random_state = random_state
         self.reset()
+        print("ENV V", self.v)
 
     def start_logging(self):
         self.log = dict()

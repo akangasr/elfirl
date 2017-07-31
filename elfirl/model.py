@@ -85,6 +85,7 @@ class RLModel():
         -------
         Simulated trajectories as a dict
         """
+        print("SIM AT", parameter_values)
         self.train_model(parameter_values, random_state=random_state)
         log_dict = self.simulate(random_state)
         if self.clean_after_call is True:
@@ -104,7 +105,7 @@ class RLModel():
             raise ValueError("Number of model variables was {} ({}), expected {}"
                     .format(len(parameter_values), parameter_values, len(self.parameter_names)))
         for name, val in zip(self.parameter_names, parameter_values):
-            self.p[name] = val
+            self.p[name] = float(val)
         logger.debug("Model parameters: {}".format(self.p))
 
     def _build_model(self, random_state):
