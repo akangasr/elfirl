@@ -32,6 +32,9 @@ class ParametricLoggingEpisodicTask(EpisodicTask):
         """
         self.v = variables
 
+    def clean(self):
+        pass
+
 
 class ParametricLoggingEnvironment(Environment):
     """ Extension of the basic environment with tunable parameters
@@ -88,6 +91,9 @@ class ParametricLoggingEnvironment(Environment):
             self.step_data["rewards"].append(self.task.getReward())
             for varname in self.log_step_variables:
                 self.step_data[varname].append(getattr(self, varname))
+
+    def clean(self):
+        pass
 
 
 class SparseActionValueTable(ActionValueTable):

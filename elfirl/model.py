@@ -1,4 +1,5 @@
 import numpy as np
+import gc
 
 from pybrain.rl.agents import LearningAgent
 from pybrain.rl.experiments import EpisodicExperiment
@@ -40,7 +41,8 @@ class RLModel():
             rl_params,
             parameter_names,
             env,
-            task):
+            task,
+            clean_after_call=False):
         """
 
         Parameters
@@ -49,12 +51,14 @@ class RLModel():
         parameters : parameter names in order
         env : Environment model
         task : EpisodecTask instance
+        clean_after_call: bool
         """
         self.rl_params = rl_params
         self.parameter_names = parameter_names
         self.env = env
         self.task = task
         self.agent = None
+        self.clean_after_call = clean_after_call
 
     def to_dict(self):
         return {
@@ -83,6 +87,8 @@ class RLModel():
         """
         self.train_model(parameter_values, random_state=random_state)
         log_dict = self.simulate(random_state)
+        if self.clean_after_call is True:
+            self.clean()
         return log_dict
 
     def get_policy(self):
@@ -159,6 +165,12 @@ class RLModel():
         self.task.env.training = True
 
         return dataset
+
+    def clean(self):
+        self.agent = None
+        self.env.clean()
+        self.task.clean()
+        gc.collect()
 
 
 class RLAgent(LearningAgent):
