@@ -20,6 +20,7 @@ class RLParams():
             q_alpha=1.0,
             q_w=1.0,
             q_gamma=0.98,
+            q_iters=10,
             exp_epsilon=0.1,
             exp_decay=1.0):
         self.n_training_episodes = n_training_episodes

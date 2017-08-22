@@ -180,87 +180,58 @@ class EpisodeQ(Q):
         for the end state of the session.
     """
 
-    def __init__(self, alpha=1.0, w=1.0, gamma=0.99):
+    def __init__(self, alpha=1.0, w=1.0, gamma=0.99, iters=10):
         ValueBasedLearner.__init__(self)
 
         self.alpha = alpha  # step scale
         self.w = w  # learning rate
         self.gamma = gamma  # temporal discount
+        self.iters = 10  # number of times to propagate value changes
 
         self.step = 0
 
     def learn(self):
-        samples = dict()
-        nextstates = dict()
-        end_samples = dict()
+        alpha = self.alpha / ((self.step + 1) ** self.w)
+        self.step += 1
+        for i in range(self.iters):
+            samples = dict()
+            nextstates = dict()
+            end_samples = dict()
+            batch_reward = 0
 
-        for seq in self.dataset:
-            laststate = None
-            lastaction = None
-            lastreward = None
+            for seq in self.dataset:
+                laststate = None
+                lastaction = None
+                lastreward = None
 
-            for state, action, reward in seq:
+                for state, action, reward in seq:
 
-                state = int(state)
-                action = int(action)
-                reward = float(reward)
+                    state = int(state)
+                    action = int(action)
+                    reward = float(reward)
 
-                if laststate == None:
+                    if laststate == None:
+                        lastaction = action
+                        laststate = state
+                        lastreward = reward
+                        continue
+
+                    qvalue = float(self.module.getValue(laststate, lastaction))
+                    maxnext = float(max(self.module.getActionValues(state)))
+                    qvalue += alpha * (lastreward + self.gamma * maxnext - qvalue)
+                    self.module.updateValue(laststate, lastaction, qvalue)
+
                     laststate = state
                     lastaction = action
                     lastreward = reward
-                    continue
 
-                k = (laststate, lastaction)
-                if k in samples.keys():
-                    l = samples[k]
-                else:
-                    l = list()
-                l.append(lastreward)
-                samples[k] = l
+                    batch_reward += reward
 
-                if k in nextstates.keys():
-                    l = nextstates[k]
-                else:
-                    l = list()
-                l.append(state)
-                nextstates[k] = l
+                qvalue = float(self.module.getValue(laststate, lastaction))
+                qvalue += alpha * (lastreward - qvalue)
+                self.module.updateValue(laststate, lastaction, qvalue)
 
-                laststate = state
-                lastaction = action
-                lastreward = reward
-
-            k = (laststate, lastaction)
-            if k in end_samples.keys():
-                l = end_samples[k]
-            else:
-                l = list()
-            l.append(lastreward)
-            end_samples[k] = l
-
-        alpha = self.alpha / ((self.step + 1) ** self.w)
-
-        for k, v in end_samples.items():
-            # Update step for end actions
-            s = k[0]
-            a = k[1]
-            r = float(np.mean(v))
-            qvalue = self.module.getValue(s, a)
-            dq = alpha * (r - qvalue)
-            self.module.updateValue(s, a, qvalue + dq)
-
-        for k, v in samples.items():
-            # Update step for normal actions
-            s = k[0]
-            a = k[1]
-            r = float(np.mean(v))
-            qvalue = self.module.getValue(s, a)
-            avgmaxnext = float(np.mean([self.module.getValue(ns, self.module.getMaxAction(ns)) \
-                                        for ns in nextstates[k]]))
-            dq = alpha * (r + self.gamma * avgmaxnext - qvalue)
-            self.module.updateValue(s, a, qvalue + dq)
-
-        self.step += 1
+        print("step {} reward {}".format(self.step, batch_reward/float(self.iters)))
 
 
 class EGreedyExplorer(DiscreteExplorer):
