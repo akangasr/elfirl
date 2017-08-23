@@ -193,45 +193,39 @@ class EpisodeQ(Q):
     def learn(self):
         alpha = self.alpha / ((self.step + 1) ** self.w)
         self.step += 1
+        rewards = list()
         for i in range(self.iters):
-            samples = dict()
-            nextstates = dict()
-            end_samples = dict()
-            batch_reward = 0
-
             for seq in self.dataset:
-                laststate = None
-                lastaction = None
-                lastreward = None
+                nextstate = None
+                nextaction = None
+                nextreward = None
+                if i == 0:
+                    seq_reward = 0
 
-                for state, action, reward in seq:
+                for state, action, reward in reversed(list(seq)):  # zip is not directly reversible
 
                     state = int(state)
                     action = int(action)
                     reward = float(reward)
+                    qvalue = float(self.module.getValue(state, action))
 
-                    if laststate == None:
-                        lastaction = action
-                        laststate = state
-                        lastreward = reward
-                        continue
+                    if nextstate == None:
+                        qvalue += alpha * (reward - qvalue)
+                    else:
+                        maxnext = float(max(self.module.getActionValues(nextstate)))
+                        qvalue += alpha * (reward + self.gamma * maxnext - qvalue)
 
-                    qvalue = float(self.module.getValue(laststate, lastaction))
-                    maxnext = float(max(self.module.getActionValues(state)))
-                    qvalue += alpha * (lastreward + self.gamma * maxnext - qvalue)
-                    self.module.updateValue(laststate, lastaction, qvalue)
+                    self.module.updateValue(state, action, qvalue)
+                    nextstate = state
+                    nextaction = action
+                    nextreward = reward
+                    if i == 0:
+                        seq_reward += reward
 
-                    laststate = state
-                    lastaction = action
-                    lastreward = reward
+                if i == 0:
+                    rewards.append(seq_reward)
 
-                    batch_reward += reward
-
-                qvalue = float(self.module.getValue(laststate, lastaction))
-                qvalue += alpha * (lastreward - qvalue)
-                self.module.updateValue(laststate, lastaction, qvalue)
-
-        print("step {} reward {}".format(self.step, batch_reward/float(self.iters)))
+        print("step {} reward mean={:.1f} std={:.1f}".format(self.step, np.mean(rewards), np.std(rewards)))
 
 
 class EGreedyExplorer(DiscreteExplorer):
