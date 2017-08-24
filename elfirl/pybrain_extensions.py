@@ -194,6 +194,8 @@ class EpisodeQ(Q):
         alpha = self.alpha / ((self.step + 1) ** self.w)
         self.step += 1
         rewards = list()
+        pos_end = list()
+
         for i in range(self.iters):
             for seq in self.dataset:
                 nextstate = None
@@ -211,6 +213,11 @@ class EpisodeQ(Q):
 
                     if nextstate == None:
                         qvalue += alpha * (reward - qvalue)
+                        if i == 0:
+                            if reward > 0:
+                                pos_end.append(1)
+                            else:
+                                pos_end.append(0)
                     else:
                         maxnext = float(max(self.module.getActionValues(nextstate)))
                         qvalue += alpha * (reward + self.gamma * maxnext - qvalue)
@@ -225,7 +232,7 @@ class EpisodeQ(Q):
                 if i == 0:
                     rewards.append(seq_reward)
 
-        print("step {} reward mean={:.1f} std={:.1f}".format(self.step, np.mean(rewards), np.std(rewards)))
+        print("step {} reward mean={:.1f} (std={:.1f}) positive final reward in {:.2f}%".format(self.step, np.mean(rewards), np.std(rewards), 100*sum(pos_end)/float(len(pos_end))))
 
 
 class EGreedyExplorer(DiscreteExplorer):
