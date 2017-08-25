@@ -79,19 +79,23 @@ class ParametricLoggingEnvironment(Environment):
             self.step_data = self.log["sessions"][self.log["session"]]
             for varname in self.log_session_variables:
                 self.step_data[varname] = getattr(self, varname)
-            self.step_data["path"] = Path([])
-            self.step_data["rewards"] = list()
             for varname in self.log_step_variables:
-                self.step_data[varname] = list()
+                if varname == "path":
+                    self.step_data["path"] = Path([])
+                else:
+                    self.step_data[varname] = list()
 
     def _log_transition(self):
         """ Should be called after transition
         """
         if self.log != None:
-            self.step_data["path"].append(Transition(self.prev_state, self.action, self.state))
-            self.step_data["rewards"].append(self.task.getReward())
             for varname in self.log_step_variables:
-                self.step_data[varname].append(getattr(self, varname))
+                if varname == "rewards":
+                    self.step_data["rewards"].append(self.task.getReward())
+                elif varname == "path":
+                    self.step_data["path"].append(Transition(self.prev_state, self.action, self.state))
+                else:
+                    self.step_data[varname].append(getattr(self, varname))
 
     def clean(self):
         pass
@@ -195,6 +199,7 @@ class EpisodeQ(Q):
         self.step += 1
         rewards = list()
         pos_end = list()
+        path_len = list()
 
         for i in range(self.iters):
             for seq in self.dataset:
@@ -203,6 +208,7 @@ class EpisodeQ(Q):
                 nextreward = None
                 if i == 0:
                     seq_reward = 0
+                    n_steps = 0
 
                 for state, action, reward in reversed(list(seq)):  # zip is not directly reversible
 
@@ -228,11 +234,14 @@ class EpisodeQ(Q):
                     nextreward = reward
                     if i == 0:
                         seq_reward += reward
+                        n_steps += 1
 
                 if i == 0:
+                    path_len.append(n_steps)
                     rewards.append(seq_reward)
 
-        print("step {} reward mean={:.1f} (std={:.1f}) positive final reward in {:.2f}%".format(self.step, np.mean(rewards), np.std(rewards), 100*sum(pos_end)/float(len(pos_end))))
+        print("step {} reward mean={:.1f} (std={:.1f}) | positive final reward in {:.2f}% | path len mean={:.2f} (std={:.2f})".format(
+                self.step, np.mean(rewards), np.std(rewards), 100*sum(pos_end)/float(len(pos_end)), np.mean(path_len), np.std(path_len)))
 
 
 class EGreedyExplorer(DiscreteExplorer):
