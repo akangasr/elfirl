@@ -19,6 +19,8 @@ class Path():
         return self.transitions[0].prev_state
 
     def __eq__(a, b):
+        if type(a) != type(b):
+            return False
         if len(a) != len(b):
             return False
         for t1, t2 in zip(a.transitions, b.transitions):
