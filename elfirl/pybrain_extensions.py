@@ -240,7 +240,8 @@ class EpisodeQ(Q):
                     path_len.append(n_steps)
                     rewards.append(seq_reward)
 
-        print("step {} reward mean={:.1f} (std={:.1f}) | positive final reward in {:.2f}% | path len mean={:.2f} (std={:.2f})".format(
+        if self.step % 100 == 0:
+            print("step {} reward mean={:.1f} (std={:.1f}) | positive final reward in {:.2f}% | path len mean={:.2f} (std={:.2f})".format(
                 self.step, np.mean(rewards), np.std(rewards), 100*sum(pos_end)/float(len(pos_end)), np.mean(path_len), np.std(path_len)))
 
 
